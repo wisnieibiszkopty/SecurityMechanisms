@@ -2,6 +2,13 @@
 using Cryptography.Crypto;
 using Cryptography.PKI.Services;
 
+void WriteTitle(string text)
+{
+    Console.ForegroundColor = ConsoleColor.DarkGreen;
+    Console.WriteLine($"=== {text} ===");
+    Console.ForegroundColor = ConsoleColor.White;
+}
+
 ICryptoService cryptoService = new CryptoService();
 
 string message = "Hello Bob!";
@@ -12,11 +19,11 @@ using var key = cryptoService.GenerateSymmetricKey();
 var encryptedSymmetric = cryptoService.EncryptSymmetric(message, key);
 var decryptedSymmetric = cryptoService.DecryptSymmetric(encryptedSymmetric, key);
 
-WriteTitle("Szyfrowanie symetryczne");
+WriteTitle("Symmetric encryption");
 
-Console.WriteLine("Tekst do zaszyfrowania: " + message);
-Console.WriteLine("Zaszyfrowane dane (base64): " + Convert.ToBase64String(encryptedSymmetric));
-Console.WriteLine("Odszyfrowane dane: " + decryptedSymmetric);
+Console.WriteLine("Text to be encrypted: " + message);
+Console.WriteLine("Encrypted data (base64): " + Convert.ToBase64String(encryptedSymmetric));
+Console.WriteLine("Decrypted data: " + decryptedSymmetric);
 
 //ASYMMETRIC CRYPTOGRAPHY
 using var aliceKeyPair = cryptoService.GenerateAsymmetricKeyPair();
@@ -30,30 +37,30 @@ var encryptedAsymmetricToBob = cryptoService
 var decryptedAsymmetricToBob = cryptoService
     .DecryptAsymmetric(encryptedAsymmetricToBob, aliceKeyPair.PublicKey, bobKeyPair.PrivateKey);
 
-WriteTitle("Szyfrowanie Asymetryczne");
+WriteTitle("Asymmetric encryption");
 
-Console.WriteLine($"Tekst do zaszyfrowania: {messageToBob}");
-Console.WriteLine($"Zaszyfrowane dane (base64): {Convert.ToBase64String(encryptedAsymmetricToBob)}");
-Console.WriteLine($"Odszyfrowane dane: {decryptedAsymmetricToBob}");
+Console.WriteLine($"Text to be encrypted: {messageToBob}");
+Console.WriteLine($"Encrypted data (base64): {Convert.ToBase64String(encryptedAsymmetricToBob)}");
+Console.WriteLine($"Decrypted data: {decryptedAsymmetricToBob}");
 
 var encryptedAsymmetricToAlice = cryptoService
     .EncryptAsymmetric(messageToAlice, aliceKeyPair.PublicKey, bobKeyPair.PrivateKey);
 var decryptedAsymmetricToAlice = cryptoService
     .DecryptAsymmetric(encryptedAsymmetricToAlice, bobKeyPair.PublicKey, aliceKeyPair.PrivateKey);
     
-Console.WriteLine($"Tekst do zaszyfrowania: {messageToAlice}");
-Console.WriteLine($"Zaszyfrowane dane (base64): {Convert.ToBase64String(encryptedAsymmetricToAlice)}");
-Console.WriteLine($"Odszyfrowane dane: {decryptedAsymmetricToAlice}");
+Console.WriteLine($"Text to be encrypted: {messageToAlice}");
+Console.WriteLine($"Encrypted data (base64): {Convert.ToBase64String(encryptedAsymmetricToAlice)}");
+Console.WriteLine($"Decrypted data: {decryptedAsymmetricToAlice}");
 
 //HYBRID CRYPTOGRAPHY
 string filepath = "Crypto/Resources/message.txt";
-Console.WriteLine("Ścieżka pliku do zaszyfrowania: " + filepath);
+Console.WriteLine("Filepath to be encrypted: " + filepath);
 
 var encryptedFilePath = cryptoService.EncryptFileSecretStream(filepath, bobKeyPair.PublicKey, aliceKeyPair.PrivateKey);
-Console.WriteLine("Ścieżka zaszyfrowanego pliku: " + encryptedFilePath);
+Console.WriteLine("Encrypted file path: " + encryptedFilePath);
 
 var decryptedFilePath = cryptoService.DecryptFileSecretStream(encryptedFilePath, aliceKeyPair.PublicKey, bobKeyPair.PrivateKey);
-Console.WriteLine("Ścieżka odszyfrowanego pliku: " + decryptedFilePath);
+Console.WriteLine("Decrypted file path: " + decryptedFilePath);
 
 // PKI SIGNATURE
 WriteTitle("PKI Signature");
@@ -74,9 +81,26 @@ var isValid = pkiService.VerifySignature(messageBytes, signature, keyPair.Public
 
 Console.WriteLine($"Is signature valid? {isValid}");
 
-void WriteTitle(string text)
-{
-    Console.ForegroundColor = ConsoleColor.DarkGreen;
-    Console.WriteLine($"=== {text} ===");
-    Console.ForegroundColor = ConsoleColor.White;
-}
+// PKI Simulation
+WriteTitle("PKI Simulation");
+
+using var certificateAuthority = new CertificateAuthorityService(pkiService);
+
+Console.WriteLine(certificateAuthority.RootCertificate);
+
+var certificate = certificateAuthority.GenerateCertificate("Alice", keyPair.PublicKey);
+
+Console.WriteLine("Issued Certificate");
+Console.WriteLine(certificate);
+
+isValid = certificateAuthority.VerifyCertificate(certificate);
+Console.WriteLine($"Is signature valid? {isValid}");
+
+certificateAuthority.ExportCertificate("certificate", certificate);
+var importedCert = certificateAuthority.ImportCertificate("certificate.pem");
+Console.WriteLine(importedCert);
+
+certificateAuthority.AddCertificateToRevocationList(importedCert);
+
+var isValidAfterRevocation = certificateAuthority.VerifyCertificate(importedCert); 
+Console.WriteLine($"Is signature valid? {isValidAfterRevocation}");

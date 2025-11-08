@@ -127,9 +127,6 @@ public partial class ChatWindow : Window
             _currentUser.EncryptionKeys.PrivateKey
         );
         
-        Debug.WriteLine(Encoding.UTF8.GetString(message.Ciphertext));
-        Debug.WriteLine(Convert.ToBase64String(message.Signature));
-        
         var isSignatureValid = AppContext.PkiService.VerifySignature(
             Encoding.UTF8.GetBytes(decryptedMessage),
             message.Signature,

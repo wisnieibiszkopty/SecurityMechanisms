@@ -1,0 +1,27 @@
+﻿@page
+@model WebApp.Pages.Account.VerifyMfaModel
+@{
+    ViewData["Title"] = "MFA verification";
+}
+
+<h2>MFA verification</h2>
+
+<p>Enter the code from the Authenticator app</p>
+
+<form method="post">
+    <div asp-validation-summary="All" class="text-danger mb-2"></div>
+    <div class="mb-2">
+        <label>TOTP code</label>
+        <input asp-for="Code" class="form-control" />
+        <span asp-validation-for="Code" class="text-danger"></span>
+    </div>
+    <button type="submit" class="btn btn-primary">Submit</button>
+</form>
+
+<div class="mt-2 text-center">
+    <a asp-page="/Account/VerifyMfaBackup" class="btn btn-link">Can't access the app? Enter your backup code.</a>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

@@ -1,0 +1,28 @@
+﻿@page
+@model MFAWebApp.Pages.Account.EnableMfaModel
+@{
+    ViewData["Title"] = "Activate MFA";
+}
+
+<h2>Multi-Factor Authentication Activation</h2>
+
+<p>Scan the code in the Authenticator app: </p>
+
+<img src="https://api.qrserver.com/v1/create-qr-code/?data=@Model.QrUri&size=200x200" alt="QR Code">
+
+<p>Or enter the manually generated code:</p>
+<pre>@Model.Secret</pre>
+
+<form method="post">
+    <div asp-validation-summary="All" class="text-danger mb-3"></div>
+    <div>
+        <label>Enter code from application:</label>
+        <input asp-for="Code" class="form-control" />
+        <span asp-validation-for="Code" class="text-danger"></span>
+    </div>
+    <button type="submit" class="btn btn-primary mt-2">Activate MFA</button>
+</form>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

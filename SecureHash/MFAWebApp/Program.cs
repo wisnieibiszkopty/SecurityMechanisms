@@ -1,5 +1,6 @@
 using MFAWebApp.Data;
 using MFAWebApp.Services.Authentication;
+using MFAWebApp.Services.TOTP;
 using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -13,6 +14,7 @@ builder.Services.AddDbContext<AppDbContext>(
 );
 
 builder.Services.AddSingleton<IPasswordHasher, PasswordHasherScrypt>();
+builder.Services.AddSingleton<ITotpService, TotpService>();
 
 builder.Services.AddHttpContextAccessor();
 

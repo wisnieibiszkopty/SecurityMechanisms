@@ -1,0 +1,40 @@
+﻿@page
+@model MFAWebApp.Pages.Account.ManageModel
+@{
+    ViewData["Title"] = "Account Management";
+}
+
+<h2>Account Management</h2>
+
+@if (TempData["StatusMessage"] != null)
+{
+    <div class="alert alert-success">@TempData["StatusMessage"]</div>
+}
+
+<div class="card mt-3 p-3">
+    <h4>Multifactor authentication (MFA)</h4>
+    <p>Status: 
+        <strong class="@(Model.MfaEnabled ? "text-success" : "text-danger")">
+            @(Model.MfaEnabled ? "Enabled" : "Disabled")
+        </strong>
+    </p>
+
+    @if (!Model.MfaEnabled)
+    {
+        <a asp-page="/Account/EnableMfa" class="btn btn-primary">Enable MFA</a>
+    }
+    else
+    {
+        <form method="post" asp-page-handler="DisableMfa">
+            <button type="submit" class="btn btn-danger">Disable MFA</button>
+        </form>
+    }
+</div>
+
+<div class="card mt-3 p-3">
+    <h4>Backup codes</h4>
+
+    <a asp-page="/Account/GenerateBackupCodes" class="btn btn-secondary">
+        Manage backup codes
+    </a>
+</div>

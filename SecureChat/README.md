@@ -10,6 +10,6 @@ A simple desktop application that enables secure message exchange between users,
 
 ## Screenshots
 
-![Join Window](/Images/join_window.png)
+![Join Window](Images/join_window.png)
 
-![Chat Windows](/Images/chat_windows.png)
+![Chat Windows](Images/chat_windows.png)

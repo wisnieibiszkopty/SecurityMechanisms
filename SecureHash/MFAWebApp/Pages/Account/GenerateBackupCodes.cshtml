@@ -1,0 +1,36 @@
+﻿@page
+@model MFAWebApp.Pages.Account.GenerateBackupCodesModel
+@{
+    ViewData["Title"] = "Backup codes";
+}
+
+<h2>Generate backup codes</h2>
+
+<p>
+    Generate a set of one-time backup codes that will allow you to access your account if you are unable to use multi-factor authentication.
+    Be sure to save them in a safe place, as they will only be visible once. It may take up to a few seconds to generate the codes.
+</p>
+
+<form method="post" asp-page-handler="Generate">
+    <button type="submit" class="btn btn-warning">Generate new codes (10)</button>
+</form>
+
+@if (Model.Codes != null)
+{
+    <div class="mt-3">
+        <h4>Generated backup codes</h4>
+        <pre style="font-size:1.1rem;">
+        @foreach (var code in Model.Codes)
+        {
+                    @($"{code}\n")
+        }
+                </pre>
+        <p class="text-muted"><strong>Warning!</strong> These codes are displayed once. They will no longer be visible when you return to this page.</p>
+    </div>
+}
+else
+{
+    <div class="mt-3">
+        <p>Number of unused codes remaining: <strong>@Model.RemainingCodesCount</strong></p>
+    </div>
+}

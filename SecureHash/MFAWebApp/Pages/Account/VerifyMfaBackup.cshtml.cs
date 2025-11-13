@@ -6,44 +6,50 @@ using MFAWebApp.Services.TOTP;
 
 namespace WebApp.Pages.Account
 {
-    public class VerifyMfaModel : PageModel
+    public class VerifyMfaBackupModel : PageModel
     {
         private readonly AppDbContext _db;
-        private readonly ITotpService _totpService;
+        private readonly IBackupCodeService _backupCodeService;
 
-        public VerifyMfaModel(AppDbContext db, ITotpService totpService)
+        public VerifyMfaBackupModel(AppDbContext db, IBackupCodeService backupCodeService)
         {
             _db = db;
-            _totpService = totpService;
+            _backupCodeService = backupCodeService;
         }
 
         [BindProperty]
-        [Required(ErrorMessage = "A code from the Authenticator app is required.")]
-        public string Code { get; set; }
+        [Required(ErrorMessage = "A one-time backup code is required")]
+        public string BackupCode { get; set; }
 
         public async Task<IActionResult> OnPostAsync()
         {
             var pendingUserId = HttpContext.Session.GetInt32("PendingUserId");
             if (pendingUserId == null)
             {
-                ModelState.AddModelError(string.Empty, "Your MFA session is expiring. Please log in again.");
+                ModelState.AddModelError(string.Empty, "Your MFA session is expiring. Please log in again");
                 return RedirectToPage("/Account/Login");
             }
             var user = await _db.Users.FindAsync(pendingUserId);
 
             if (user == null) return RedirectToPage("/Account/Login");
 
-            if (!string.IsNullOrWhiteSpace(Code) && !string.IsNullOrWhiteSpace(user.TotpSecret))
+            if (!string.IsNullOrWhiteSpace(BackupCode))
             {
-                if (_totpService.VerifyCode(user.TotpSecret, Code))
+                var success = await _backupCodeService.VerifyAndConsumeAsync(user.Id, BackupCode.Trim());
+
+                if (success)
                 {
+                    user.MfaEnabled = false;
+                    user.TotpSecret = null;
+                    await _db.SaveChangesAsync();
+
                     HttpContext.Session.Remove("PendingUserId");
                     HttpContext.Session.SetInt32("UserId", user.Id);
-                    return RedirectToPage("/Index");
+                    return RedirectToPage("/Account/EnableMfa");
                 }
             }
-            
-            ModelState.AddModelError(string.Empty, "Invalid TOTP code");
+
+            ModelState.AddModelError(string.Empty, "Invalid backup code");
 
             HttpContext.Session.Remove("PendingUserId");
             HttpContext.Session.SetInt32("PendingUserId", pendingUserId.Value);

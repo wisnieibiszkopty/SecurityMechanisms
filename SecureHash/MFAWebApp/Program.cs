@@ -15,6 +15,7 @@ builder.Services.AddDbContext<AppDbContext>(
 
 builder.Services.AddSingleton<IPasswordHasher, PasswordHasherScrypt>();
 builder.Services.AddSingleton<ITotpService, TotpService>();
+builder.Services.AddScoped<IBackupCodeService, BackupCodeService>();
 
 builder.Services.AddHttpContextAccessor();
 

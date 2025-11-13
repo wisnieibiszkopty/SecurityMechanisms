@@ -1,6 +1,7 @@
 ﻿// See https://aka.ms/new-console-template for more information
 
 using System.Diagnostics;
+using ConsoleTables;
 using HashDemo;
 using MFAWebApp.Services.Authentication;
 using Microsoft.Extensions.Configuration;
@@ -13,7 +14,8 @@ Console.WriteLine($"Salt: {salt}");
 
 var memoryConfig = new Dictionary<string, string>
 {
-    { "Security:PasswordPepper", pepper }
+    { "Security:PasswordPepper", pepper },
+    { "Security:PasswordSalt", salt }
 };
 
 var inMemoryConfig = new ConfigurationBuilder()
@@ -27,11 +29,11 @@ var stopwatch = new Stopwatch();
 
 var password = "Password123Test";
 
+var sha256Hasher = new Sha256Hasher(inMemoryConfig);
 var bcryptHasher = new PasswordHasherBcrypt(inMemoryConfig);
 var scryptHasher = new PasswordHasherScrypt(inMemoryConfig);
 
-// TODO refactor Sha256
-var sha256TestResult = Sha256Test();
+var sha256TestResult = PerformanceTest(sha256Hasher, "SHA256");
 var bcryptTestResult = PerformanceTest(bcryptHasher, "Bcrypt");
 var scryptTestResult = PerformanceTest(scryptHasher, "Scrypt");
 
@@ -42,9 +44,18 @@ var testsResults = new List<HashingTestResult>
     scryptTestResult
 };
 
-// TODO print result and add comment
-Console.WriteLine($"Hashing tests: {testsResults.Count}");
-Console.WriteLine(bcryptTestResult.HashingTime);
+PrintResultsAsTable(testsResults);
+// Time in ms
+// + ------------- + ----------- + ---------------- + ---------- +
+// | AlgorithmName | HashingTime | VerificationTime | IsVerified |
+// + ------------- + ----------- + ---------------- + ---------- +
+// | SHA256        | 00.002711   | 00.0002879       | True       |
+// + ------------- + ----------- + ---------------- + ---------- +
+// | Bcrypt        | 00.585103   | 00.4764247       | True       |
+// + ------------- + ----------- + ---------------- + ---------- +
+// | Scrypt        | 00.252355   | 00.0786659       | True       |
+// + ------------- + ----------- + ---------------- + ---------- +
+
 
 HashingTestResult PerformanceTest(IPasswordHasher hasher, string algorithmName)
 {
@@ -67,66 +78,14 @@ HashingTestResult PerformanceTest(IPasswordHasher hasher, string algorithmName)
     return new HashingTestResult
     {
         AlgorithmName = algorithmName,
-        HashingTime = hashingTime,
-        VerificationTime = verificationTime,
+        HashingTime = hashingTime.ToString(@"ss\.ffffff"),
+        VerificationTime = verificationTime.ToString(@"ss\.fffffff"),
         IsVerified = isVerified
     };
 }
 
-HashingTestResult Sha256Test()
+void PrintResultsAsTable(List<HashingTestResult> rows)
 {
-    var hasher = new Sha256Hasher();
- 
-    stopwatch.Restart();
-    stopwatch.Start();
-    
-    var hash = hasher.Hash(password, salt, pepper);
-    
-    stopwatch.Stop();
-    var sha256HashingTime = stopwatch.Elapsed;
-
-    Console.WriteLine($"Hashed: {hash}");
-
-    stopwatch.Restart();
-    stopwatch.Start();
-    
-    var isVerified = hasher.Verify(password, hash, salt, pepper);
-
-    stopwatch.Stop();
-    var sha256VerifyingTime = stopwatch.Elapsed;
-    
-    Console.WriteLine($"Is verified: {isVerified}");
-
-    return new HashingTestResult
-    {
-        AlgorithmName = "SHA256",
-        HashingTime = sha256HashingTime,
-        VerificationTime = sha256VerifyingTime,
-        IsVerified = isVerified,
-    };
-}
-
-void BcryptTest()
-{
-    var bcryptHasher = new PasswordHasherBcrypt(inMemoryConfig);
-    var bcryptHash = bcryptHasher.Hash(password);
-
-    Console.WriteLine($"Hashed: {bcryptHash}");
-
-    var isVerifiedBcrypt = bcryptHasher.Verify(password, bcryptHash);
-
-    Console.WriteLine($"Is verified: {isVerifiedBcrypt}");
-    
-}
-
-void ScryptTest()
-{
-    var scryptHasher = new PasswordHasherScrypt(inMemoryConfig);
-    var scryptHash = scryptHasher.Hash(password);
-
-    Console.WriteLine($"Hashed: {scryptHash}");
-
-    var isVerifiedScrypt = scryptHasher.Verify(password, scryptHash);
-
-    Console.WriteLine($"Is verified: {isVerifiedScrypt}");
+    ConsoleTable.From(rows)
+        .Write(Format.Alternative);
 }
